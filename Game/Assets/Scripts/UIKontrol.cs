@@ -22,6 +22,7 @@ public class UIKontrol : MonoBehaviour
 
     [SerializeField] GameObject EndInformationPanel;
     [SerializeField] Text scoreEnd;
+    int scoresave;
     [SerializeField] Button saveGameButton;
 
     // When press this button save score and player name backend
@@ -57,7 +58,7 @@ public class UIKontrol : MonoBehaviour
         oyunBittiText.gameObject.SetActive(true);
         oynaButonu.gameObject.SetActive(true);
         EndInformationPanel.gameObject.SetActive(true);
-        int scoresave = score;
+        scoresave = score;
         scoreEnd.text = "Score: " + score;
         usernameUI[1].text = "Username: " + playerName;
         score = 0;
@@ -121,7 +122,7 @@ public class UIKontrol : MonoBehaviour
         if (!string.IsNullOrEmpty(playerName))
         {
 
-            StartCoroutine(PostScore(playerName, score));
+            StartCoroutine(PostScore(playerName, scoresave));
 
         }
         else
@@ -133,7 +134,7 @@ public class UIKontrol : MonoBehaviour
 
     }
 
-    IEnumerator PostScore(string playerName, int puan)
+    IEnumerator PostScore(string playerName, int score)
     {
         string jsonData = JsonUtility.ToJson(new ScoreData(playerName, score));
         UnityWebRequest request = new UnityWebRequest("http://localhost:8000/score", "POST");
