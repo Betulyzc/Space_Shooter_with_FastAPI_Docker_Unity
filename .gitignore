@@ -5,6 +5,7 @@
 .env
 .venv/
 venv/
+__pycache__/
 .utmp/
 /[Ll]ibrary/
 /[Tt]emp/
