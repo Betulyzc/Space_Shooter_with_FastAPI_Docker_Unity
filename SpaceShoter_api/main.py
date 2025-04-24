@@ -24,3 +24,11 @@ def save_score(score: schemas.ScoreCreate, db:Session=Depends(get_db)):
 @app.get("/score",response_model=list[schemas.ScoreOut])
 def get_score(db:Session=Depends(get_db)):
     return crud.get_scores(db)
+
+@app.delete("/score/username/{username}")
+def delete_score_by_username(username:str,db:Session=Depends(get_db)):
+    return crud.delete_score_by_username(username,db)
+
+@app.delete("/score/id/{id}")
+def delete_score_by_id(id:int, db:Session=Depends(get_db)):
+    return crud.delete_score_by_id(id,db)
