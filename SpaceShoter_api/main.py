@@ -32,3 +32,8 @@ def delete_score_by_username(username:str,db:Session=Depends(get_db)):
 @app.delete("/score/id/{id}")
 def delete_score_by_id(id:int, db:Session=Depends(get_db)):
     return crud.delete_score_by_id(id,db)
+
+@app.get("/check-username/{username}",response_model=schemas.UsernameCheckResponse)
+def check_username(username:str,db:Session=Depends(get_db)):
+    return crud.check_username(username,db)
+    

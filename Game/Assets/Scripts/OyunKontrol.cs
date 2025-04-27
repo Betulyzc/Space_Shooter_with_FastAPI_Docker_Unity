@@ -29,7 +29,7 @@ public class OyunKontrol : MonoBehaviour
     public void OyunuBaslat()
     {
 
-        uikontrol.OyunBasladý();
+        uikontrol.OyunBasladi();
         uzayGemisi = Instantiate(UzayGemisiPrefab);
         uzayGemisi.transform.position = new Vector3(0, EkranHesaplayýcý.Alt + 1.5f);
         AsteroidUret(5);
@@ -55,7 +55,7 @@ public class OyunKontrol : MonoBehaviour
 
     public void AsteroidYokOldu(GameObject gameobject)
     {
-        uikontrol.asteroidPuanEkle(gameobject);
+        uikontrol.AsteroidPuanEkle(gameobject);
         asteroidler.Remove(gameobject);
         if (asteroidler.Count <= zorluk)
         {

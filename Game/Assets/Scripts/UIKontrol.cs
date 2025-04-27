@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -7,137 +6,154 @@ using UnityEngine.UI;
 
 public class UIKontrol : MonoBehaviour
 {
-    [SerializeField] GameObject oyunBittiText;
+    [Header("UI Elements")]
+    [SerializeField] private GameObject oyunBittiText;
+    [SerializeField] private GameObject oyunAdiText;
+    [SerializeField] private GameObject oynaButonu;
+    [SerializeField] private TMP_InputField usernameInput;
+    [SerializeField] private Button loginButton;
+    [SerializeField] private Text puanText;
+    [SerializeField] private Text[] usernameUI;
+    [SerializeField] private GameObject EndInformationPanel;
+    [SerializeField] private Text scoreEnd;
+    [SerializeField] private Button saveGameButton;
 
-    [SerializeField] GameObject oyunAdiText;
+    [Header("Error Panel")]
+    [SerializeField] private GameObject errorPanel;
+    [SerializeField] private Text errorMessageText;
+    [SerializeField] private float errorDisplayDuration = 2.5f;
 
-    [SerializeField] GameObject oynaButonu;
+    private Coroutine errorCoroutine;
 
-
-    [SerializeField] TMP_InputField usernameInput;
-    [SerializeField] Button login;
-    [SerializeField] Text puanText;
-    [SerializeField] Text[] usernameUI;
-
-
-    [SerializeField] GameObject EndInformationPanel;
-    [SerializeField] Text scoreEnd;
-    int scoresave;
-    [SerializeField] Button saveGameButton;
-
-    // When press this button save score and player name backend
     private string playerName;
-    int score = 0;
+    private int score = 0;
+    private int scoresave = 0;
+    private OyunKontrol oyunKontrol;
 
-    OyunKontrol oyunKontrol;
-
-    void Start()
+    private void Start()
     {
-        oyunBittiText.gameObject.SetActive(false);
+        oyunBittiText.SetActive(false);
         puanText.gameObject.SetActive(false);
         usernameInput.gameObject.SetActive(true);
-        oynaButonu.gameObject.SetActive(false);
+        oynaButonu.SetActive(false);
         usernameUI[0].gameObject.SetActive(true);
         EndInformationPanel.SetActive(false);
+        errorPanel.SetActive(false);
+
         oyunKontrol = Camera.main.GetComponent<OyunKontrol>();
     }
 
-    public void OyunBasladý()
+    public void OyunBasladi()
     {
-        EndInformationPanel.gameObject.SetActive(false);
-        oyunAdiText.gameObject.SetActive(false);
-        oynaButonu.gameObject.SetActive(false);
+        EndInformationPanel.SetActive(false);
+        oyunAdiText.SetActive(false);
+        oynaButonu.SetActive(false);
         puanText.gameObject.SetActive(true);
-        PuanGuncelle();
-        oyunBittiText.gameObject.SetActive(false);
+        oyunBittiText.SetActive(false);
+        UpdateScoreText();
     }
 
     public void OyunBitti()
     {
         oyunKontrol.SonTemizleyici();
-        oyunBittiText.gameObject.SetActive(true);
-        oynaButonu.gameObject.SetActive(true);
-        EndInformationPanel.gameObject.SetActive(true);
+        oyunBittiText.SetActive(true);
+        oynaButonu.SetActive(true);
+        EndInformationPanel.SetActive(true);
+
         scoresave = score;
         scoreEnd.text = "Score: " + score;
         usernameUI[1].text = "Username: " + playerName;
+
         score = 0;
-
     }
 
-    public void PuanGuncelle()
+    private void UpdateScoreText()
     {
-
         puanText.text = "PUAN: " + score;
-
     }
 
-    public void asteroidPuanEkle(GameObject asteroid)
+    public void AsteroidPuanEkle(GameObject asteroid)
     {
-        switch (asteroid.gameObject.name[8])
+        if (asteroid.gameObject.name.Length > 8)
         {
-            case '1':
-                score += 5;
-                break;
-            case '2':
-                score += 10;
-                break;
-            case '3':
-                score += 15;
-                break;
-
-            default:
-                break;
+            switch (asteroid.gameObject.name[8])
+            {
+                case '1':
+                    score += 5;
+                    break;
+                case '2':
+                    score += 10;
+                    break;
+                case '3':
+                    score += 15;
+                    break;
+            }
+            UpdateScoreText();
         }
-        PuanGuncelle();
-
     }
 
-    //When player press login button is it work.
-    public void SetPlayerName()
+    public void TryLogin()
     {
-        playerName = usernameInput.text;
-        Debug.Log("Player: " + playerName);
+        string tempUsername = usernameInput.text.Trim();
 
-        if (!string.IsNullOrEmpty(playerName))
+        if (string.IsNullOrEmpty(tempUsername))
         {
+            ShowError("Please enter a username!");
+            return;
+        }
 
-            usernameInput.gameObject.SetActive(false);
-            usernameUI[0].text = "Username: " + playerName;
-            login.gameObject.SetActive(false);
-            oynaButonu.gameObject.SetActive(true);
+        StartCoroutine(CheckUsername(tempUsername, (exists) =>
+        {
+            if (exists)
+            {
+                ShowError("This username is already taken!");
+            }
+            else
+            {
+                playerName = tempUsername;
 
+                usernameInput.gameObject.SetActive(false);
+                usernameUI[0].text = "Username: " + playerName;
+                loginButton.gameObject.SetActive(false);
+                oynaButonu.SetActive(true);
+            }
+        }));
+    }
+
+    private IEnumerator CheckUsername(string playerNameToCheck, System.Action<bool> callback)
+    {
+        UnityWebRequest request = UnityWebRequest.Get("http://localhost:8000/check-username/" + playerNameToCheck);
+        yield return request.SendWebRequest();
+
+        if (request.result == UnityWebRequest.Result.Success)
+        {
+            var response = JsonUtility.FromJson<UsernameCheckResponse>(request.downloadHandler.text);
+            callback(response.exists);
         }
         else
         {
-
-            Debug.Log("Please enter a username");
-
+            Debug.LogError("Server error: " + request.error);
+            ShowError("Connection error. Please try again.");
         }
-
     }
 
     public void SendScore()
     {
         if (!string.IsNullOrEmpty(playerName))
         {
-
             StartCoroutine(PostScore(playerName, scoresave));
-
         }
         else
         {
-
-            Debug.LogWarning("username is empty.");
-
+            ShowError("Username is empty. Cannot send score!");
         }
-
     }
 
-    IEnumerator PostScore(string playerName, int score)
+    private IEnumerator PostScore(string playerName, int score)
     {
         string jsonData = JsonUtility.ToJson(new ScoreData(playerName, score));
         UnityWebRequest request = new UnityWebRequest("http://localhost:8000/score", "POST");
+
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonData);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
@@ -146,26 +162,50 @@ public class UIKontrol : MonoBehaviour
         yield return request.SendWebRequest();
 
         if (request.result == UnityWebRequest.Result.Success)
-            Debug.Log("Score sends.");
+        {
+            Debug.Log("Score successfully sent.");
+        }
         else
-            Debug.LogError("Error: " + request.error);
-
-
+        {
+            ShowError("Failed to send score: " + request.error);
+        }
     }
 
+    private void ShowError(string message)
+    {
+        if (errorCoroutine != null)
+        {
+            StopCoroutine(errorCoroutine);
+        }
+        errorCoroutine = StartCoroutine(ShowErrorCoroutine(message));
+    }
+
+    private IEnumerator ShowErrorCoroutine(string message)
+    {
+        errorMessageText.text = message;
+        errorPanel.SetActive(true);
+
+        yield return new WaitForSeconds(errorDisplayDuration);
+
+        errorPanel.SetActive(false);
+    }
 
     [System.Serializable]
-    public class ScoreData
+    private class UsernameCheckResponse
+    {
+        public bool exists;
+    }
+
+    [System.Serializable]
+    private class ScoreData
     {
         public string player_name;
         public int score;
 
         public ScoreData(string name, int score)
         {
-            this.player_name = name;
+            player_name = name;
             this.score = score;
         }
     }
-
-
 }
